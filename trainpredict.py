@@ -115,8 +115,7 @@ def predict(model, test_image_name):
         if(idx_to_class[topclass.cpu().numpy()[0][0]]=='phuclong'):
             text="Predcition : Phúc Long" + "\n"  +"Score: "+ str(topk.cpu().numpy()[0][0])
         else: text="Predcition : " +idx_to_class[topclass.cpu().numpy()[0][0]]+ "\n"  +"Score: "+ str(topk.cpu().numpy()[0][0])
-        # print("Predcition :", idx_to_class[topclass.cpu().numpy()[0][0]], ", Score: ", topk.cpu().numpy()[0][0])
     print(str(text))
     return str(text)   
 # best model:/content/gdrive/MyDrive/classification/data_model_28.pt
-model = torch.load('data_model_28.pt')
+
