@@ -117,5 +117,5 @@ def predict(model, test_image_name):
         else: text="Predcition : " +idx_to_class[topclass.cpu().numpy()[0][0]]+ "\n"  +"Score: "+ str(topk.cpu().numpy()[0][0])
     print(str(text))
     return str(text)   
-# best model:/content/gdrive/MyDrive/classification/data_model_28.pt
+
 

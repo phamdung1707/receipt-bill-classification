@@ -1,92 +1,53 @@
-import sys
+# This file will use to score your implementations.
+# You should not change this file
+
 import os
-import torch, torchvision
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, \
-    QPushButton, QTextEdit, QHBoxLayout
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
-import trainpredict
+import pandas as pd
+import time
+import sys
+# import cv2
 
-class ImageLabel(QLabel):
-    def __init__(self):
-        super().__init__()
-        
-        self.setAlignment(Qt.AlignCenter)
-        self.setText('\n\n Drop Image Here \n\n')
-        self.setStyleSheet('''
-            QLabel{
-                border: 4px dashed #aaa
-            }
-        ''')
+from simple_ocr import HoadonOCR
 
-    def setPixmap(self, image):
-        super().setPixmap(image)
-textpredict='Value'
-class AppDemo(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.resize(680, 400)
-        self.setAcceptDrops(True)
-        
-        vLayout_1 = QVBoxLayout()
-        self.photoViewer = ImageLabel()
-        vLayout_1.addWidget(self.photoViewer)
-        self.detect = QPushButton('CLassification')
-        vLayout_1.addWidget(self.detect)
-        self.detect.clicked.connect(self.classify)
-#        self.setLayout(mainLayout)
-        self.textEdit = QLabel(text=textpredict)
-        self.btn_clear = QPushButton('Clear')
-        vLayout_2 = QVBoxLayout()
-        vLayout_2.addWidget(self.textEdit)
-        vLayout_2.addWidget(self.btn_clear)
-        
-        mainLayout = QHBoxLayout(self)
-        mainLayout.addLayout(vLayout_1, stretch=3)
-        mainLayout.setSpacing(20)
-        mainLayout.addLayout(vLayout_2, stretch=2)
-        
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasImage:
-            event.accept()
-        else:
-            event.ignore()
-            
-    def dragMoveEvent(self, event):
-        if event.mimeData().hasImage:
-            event.accept()
-        else:
-            event.ignore()
-           
-    def dropEvent(self, event):
-        if event.mimeData().hasImage:
-            event.setDropAction(Qt.CopyAction)
-            self.file_path = event.mimeData().urls()[0].toLocalFile()
-            self.set_image(self.file_path)
-            path_file=str(self.file_path)
-            print('drop file:',path_file)
-            event.accept()
-        else:
-            event.ignore()  
-        
-         
-            
-    def set_image(self, file_path):
-        pixmap = QPixmap(file_path)
-        pixmap= pixmap.scaledToWidth(250)
-        self.photoViewer.setPixmap(pixmap)
-        
-    def classify(self):
-        print('hello')
-        
-        print('classify: ',self.file_path)
-        model = torch.load('data_model_47.pt')
-        
-        textpredict=trainpredict.predict(model, self.file_path)
-        self.textEdit.setText(textpredict)
-        print(textpredict)
-        
-app = QApplication(sys.argv)
-demo = AppDemo()
-demo.show()
-sys.exit(app.exec_())
+if __name__ == "__main__":
+
+    input_folder = sys.argv[1]
+    label_file = sys.argv[2]
+
+    df_labels = pd.read_csv(label_file)
+    img_name = df_labels['img_name'].values.tolist()
+    img_labels = df_labels['label'].values.tolist()
+    img_to_label = dict([(img_name[i], img_labels[i]) for i in range(len(img_name))])
+
+    start_time = time.time()
+    model = HoadonOCR()
+    init_time = time.time() - start_time
+    print("Run time in: %.2f s" % init_time)
+
+    list_files = os.listdir(input_folder)
+    print("Total test images: ", len(list_files))
+    fail_process = 0
+    cnt_predict = 0
+
+    start_time = time.time()
+    for filename in list_files:
+        img_path = os.path.join(input_folder, filename)
+        # print(cv2.imread(img_path).shape)
+        try:
+            label = model.find_label(img_path)
+            print(label)
+        except:
+            label = -1
+
+        if img_to_label[filename] == label:
+            cnt_predict += 1
+        elif label == -1:
+            print(filename)
+            fail_process += 1
+
+    run_time = time.time() - start_time
+
+    print("Ket qua dung: %i/%i" % (cnt_predict, len(list_files)))
+    print("Loi: %i" % fail_process)
+    print("Score = %.2f" % (10.*cnt_predict/len(list_files)))
+    print("Run time in: %.2f s" % run_time)
